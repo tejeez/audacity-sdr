@@ -5,7 +5,8 @@
 
 ;control center-freq "Center frequency" float "Hz" 5000 -1000000 1000000
 ;control bandwidth "Bandwidth" float "Hz" 5000 0 500000
-;control demodulation "Demodulation" choice "None (only shift to 0 Hz and filter),AM,FM,AM left FM right,USB,LSB" 3
+;control demodulation "Demodulation" choice "None (only shift to 0 Hz and filter),AM,FM,AM left FM right,USB,LSB,Differential phase" 3
+;control inv-delay "1/delay (diff.phase only)" float "Hz" 5000 0 500000
 
 (defun I (p) (aref p 0))
 (defun Q (p) (aref p 1))
@@ -58,6 +59,9 @@
 (defun lsb-demod (p)
   (complex-multiply-to-real p (complex-sine (* -0.5 bandwidth))))
 
+(defun diff-phase-demod (p)
+  (complex-multiply-conjugate p (feedback-delay p (/ 1 inv-delay) 0)))
+
 (let ((ddcsig (ddc s)))
   (case demodulation
     (0 ddcsig)
@@ -66,5 +70,6 @@
     (3 (vector (am-demod ddcsig) (fm-demod ddcsig)))
     (4 (usb-demod ddcsig))
     (5 (lsb-demod ddcsig))
+    (6 (diff-phase-demod ddcsig))
   )
 )
