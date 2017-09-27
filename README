@@ -1,0 +1,30 @@
+Audacity is a convenient tool to have a first look at a recording from a
+software defined radio. It can import raw data files with various data types
+and has a user interface to zoom and scroll signals in both waveform and
+spectrogram views. It can also do some basic filtering and resampling.
+
+Audacity, however, does not really understand complex (IQ) signals.
+It can treat them as stereo audio signals but shows the positive and negative
+halves of their spectrum on top of each other because it sees the real and
+imaginary parts as two separate signals.
+It also doesn't easily do common SDR tasks like AM or FM demodulation.
+The Nyquist prompt allows doing some special things though, such as rectifying
+a digital baseband signal to get a spectral line at the symbol rate.
+
+A typical workflow seems to be to make small GNURadio Companion scripts to
+perform filtering and demodulation and then switching back and forth between
+Audacity and GRC.
+
+By making some Audacity plugins to do downconversion, filtering and
+demodulation of IQ recordings, it should be possible to do more of these
+common tasks using one tool that already has a convenient user interface
+for things like zooming the signals.
+This is my attempt at doing that. I'm not sure if it's a good idea at all yet
+but let's see if it turns out to be useful.
+
+To use the plugins, copy or symlink them to the plugin directory.
+For example, on Linux:
+mkdir -p ~/.audacity-files/plug-ins; cd ~/.audacity-files/plug-ins &&
+ln -s ../../path/to/repository/*.ny .
+If they don't appear in your plug-ins menu yet, go to
+Effect -> Add/Remove Plug-ins -> New -> select the plugins -> Enable
