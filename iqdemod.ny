@@ -5,7 +5,7 @@
 
 ;control center-freq "Center frequency" float "Hz" 5000 -1000000 1000000
 ;control bandwidth "Bandwidth" float "Hz" 5000 0 500000
-;control demodulation "Demodulation" choice "None (only shift to 0 Hz and filter),AM,FM,AM left FM right,USB,LSB,Differential phase,BPSK PLL carrier recovery" 3
+;control demodulation "Demodulation" choice "None (only shift to 0 Hz and filter),AM,FM,AM left FM right,USB,LSB,Differential phase,BPSK PLL carrier recovery,Squared IQ to real (centered at fs/4),IQ ^4" 3
 ;control inv-delay "1/delay (diff.phase only)" float "Hz" 5000 0 500000
 ;control loop-speed "Loop speed (BPSK PLL only)" float "something" 0.01 0 0.1
 
@@ -30,14 +30,16 @@
 (defun complex-multiply-to-real (s1 s2)
     (diff (mult (I s1) (I s2)) (mult (Q s1) (Q s2))))
 
+(defun complex^2 (p) (complex-multiply p p))
+
 (defun ddc (p)
   (lowpass8
     (complex-multiply-conjugate p (complex-sine center-freq))
     (* 0.5 bandwidth)))
 
-(defun ^2 (p) (mult p p))
+(defun s^2 (p) (mult p p))
 (defun am-demod (p)
-  (s-sqrt (sum (^2 (I p)) (^2 (Q p)))))
+  (s-sqrt (sum (s^2 (I p)) (s^2 (Q p)))))
 
 (defmacro for-each-sample (operation)
  `(let* ((nsamples (snd-length (I p) 99999999))
@@ -100,6 +102,16 @@
 (defun diff-phase-demod (p)
   (complex-multiply-conjugate p (feedback-delay p (/ 1 inv-delay) 0)))
 
+(defun square-usb-demod (p)
+  (complex-multiply-to-real
+    (complex^2 p)
+    (complex-sine (* 0.25 (get-srate)))))
+
+(defun ^4-usb-demod (p)
+  (complex-multiply-to-real
+    (complex^2 (complex^2 p))
+    (complex-sine (* 0.25 (get-srate)))))
+
 (let ((ddcsig (ddc s)))
   (case demodulation
     (0 ddcsig)
@@ -110,5 +122,7 @@
     (5 (lsb-demod ddcsig))
     (6 (diff-phase-demod ddcsig))
     (7 (bpsk-pll ddcsig))
+    (8 (square-usb-demod ddcsig))
+    (9 (^4-usb-demod ddcsig))
   )
 )
